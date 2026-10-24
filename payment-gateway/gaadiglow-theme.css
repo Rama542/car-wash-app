@@ -1,0 +1,90 @@
+/* GaadiGlow theme for the YouPI-PG checkout portal.
+   Loaded after /css/checkout.css (see apply-gaadiglow-theme.mjs). It only overrides
+   colours, type, radii and shadows so the payment screens look like the GaadiGlow app;
+   no payment logic is touched. */
+@import url("https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@500;600&family=Plus+Jakarta+Sans:wght@400..800&display=swap");
+
+:root {
+  --ypg-blue: #1557FF;
+  --ypg-blue-dark: #0B3FC7;
+  --ypg-navy: #0A1428;
+  --ypg-header-gradient: linear-gradient(165deg, #081A52 0%, #1040C8 55%, #0A8DFF 100%);
+  --ypg-bg: #F2F5FA;
+  --ypg-card: #FFFFFF;
+  --ypg-text-dark: #0A1428;
+  --ypg-text-muted: #5D6B83;
+  --ypg-border: #E1E7F0;
+  --ypg-border-light: #E8EDF5;
+  --ypg-green: #11A150;
+  --ypg-green-bg: #E2F6EA;
+  --ypg-offer-bg: #E7EEFF;
+  --ypg-offer-border: #CFDCFF;
+  --ypg-danger: #D92D20;
+  --ypg-font: "Plus Jakarta Sans", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --gg-grad: linear-gradient(135deg, #1557FF 0%, #0C8BFF 55%, #00C6FF 100%);
+  --gg-shadow: 0 1px 2px rgba(16, 24, 40, .05), 0 6px 18px rgba(16, 24, 40, .07);
+  --gg-shadow-brand: 0 10px 24px -8px rgba(21, 87, 255, .55);
+}
+
+body, .ypg-body { background: var(--ypg-bg) !important; }
+body.is-embedded { background: transparent !important; }
+.ypg-wrapper { background: var(--ypg-bg); }
+* { font-family: var(--ypg-font); }
+
+/* header: the app's deep blue "rinse" gradient (the portal sets an inline gradient, so this needs !important) */
+.ypg-header { background: var(--ypg-header-gradient) !important; border-radius: 0 0 24px 24px; box-shadow: 0 10px 28px -14px rgba(8, 26, 82, .7); overflow: hidden; }
+.ypg-header::after { content: ""; position: absolute; right: -50px; top: -40px; width: 180px; height: 180px; border-radius: 50%; background: radial-gradient(closest-side, rgba(0, 198, 255, .35), transparent); pointer-events: none; }
+.ypg-header-main-row { position: relative; z-index: 1; padding: 14px 18px 12px; }
+.ypg-header-subbanner { position: relative; z-index: 1; background: rgba(255, 255, 255, .1) !important; font-weight: 600; font-size: 12px; padding: 8px 18px; }
+.ypg-merchant-name { font-weight: 800 !important; letter-spacing: -.01em; }
+.ypg-merchant-avatar {
+  border-radius: 12px !important; color: transparent !important; overflow: hidden;
+  background: #1557FF url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 36 36'%3E%3Cpath d='M18 7c3.8 4.9 7 8.8 7 12.7a7 7 0 0 1-14 0C11 15.8 14.2 11.9 18 7z' fill='%23fff'/%3E%3Cpath d='M27.6 6.4l1 2.1 2.1 1-2.1 1-1 2.1-1-2.1-2.1-1 2.1-1z' fill='%23FFC24A'/%3E%3C/svg%3E") center/100% no-repeat !important;
+  box-shadow: 0 6px 14px -4px rgba(0, 0, 0, .35);
+}
+.ypg-btn-back, .ypg-btn-profile { border-radius: 12px !important; background: rgba(255, 255, 255, .12) !important; border: 1px solid rgba(255, 255, 255, .2) !important; }
+.ypg-drag-handle-bar { background: rgba(255, 255, 255, .5) !important; }
+
+/* page */
+.ypg-body { padding: 20px 18px 22px !important; }
+.ypg-page-title { font-size: 22px !important; font-weight: 800 !important; letter-spacing: -.02em !important; }
+.ypg-auth-sub-desc { color: var(--ypg-text-muted); font-size: 13.5px; }
+.ypg-auth-box, .ypg-qr-card-container, .ypg-instructions-card, .ypg-dialog-card, .ypg-duplicate-card, .ypg-blocked-card, .ypg-queue-conversion-card, .rzp-inline-waiting-card {
+  background: #FFFFFF !important; border: 1px solid var(--ypg-border) !important; border-radius: 22px !important; box-shadow: var(--gg-shadow);
+}
+.ypg-auth-box { padding: 18px; }
+.ypg-qr-card-container { padding: 16px !important; }
+.ypg-qr-image-box { border-radius: 16px !important; border: 1.5px solid var(--ypg-border) !important; box-shadow: inset 0 0 0 4px #FFFFFF, 0 4px 12px rgba(16, 24, 40, .08); }
+.ypg-qr-prompt-title { font-weight: 800 !important; }
+.ypg-instruction-step { color: #2A3650 !important; }
+
+/* inputs */
+.ypg-input-label { font-weight: 700 !important; letter-spacing: 0 !important; text-transform: none !important; color: #2A3650 !important; font-size: 13px !important; }
+.ypg-input-control, .ypg-phone-input-wrap { border: 1.5px solid var(--ypg-border) !important; border-radius: 14px !important; background: #FFFFFF; }
+.ypg-input-control { padding: 13px 14px !important; font-size: 15.5px !important; }
+.ypg-phone-control { font-size: 17px !important; letter-spacing: .03em; padding: 13px 12px !important; }
+.ypg-phone-prefix { font-weight: 700; border-right: 1.5px solid var(--ypg-border); }
+.ypg-input-control:focus, .ypg-phone-input-wrap:focus-within { border-color: var(--ypg-blue) !important; box-shadow: 0 0 0 4px rgba(21, 87, 255, .16) !important; }
+#authOtpInput { font-family: "IBM Plex Mono", ui-monospace, monospace !important; font-size: 24px !important; letter-spacing: .5em !important; text-align: center; }
+.ypg-auth-badge-banner { border-radius: 14px !important; background: #E7EEFF !important; border-color: #CFDCFF !important; }
+
+/* buttons: the app's gradient pill */
+.ypg-btn-auth-action, .ypg-btn-continue, .btn-return-merchant, .ypg-btn-expired-primary, .ypg-btn-duplicate-action, .ypg-btn-queue-switch, .ypg-btn-blocked-exit, .rzp-btn-confirm-cancel {
+  background: var(--gg-grad) !important; color: #FFFFFF !important; border: 0 !important; border-radius: 16px !important;
+  min-height: 52px; font-weight: 800 !important; font-size: 15px !important; box-shadow: var(--gg-shadow-brand); transition: transform .15s, filter .2s !important;
+}
+.ypg-btn-auth-action:hover, .ypg-btn-continue:hover { filter: brightness(1.06); }
+.ypg-btn-auth-action:active, .ypg-btn-continue:active { transform: scale(.97); }
+.ypg-btn-expired-secondary, .rzp-btn-wait { border-radius: 16px !important; min-height: 48px; font-weight: 700 !important; }
+.ypg-btn-link { color: var(--ypg-blue) !important; font-weight: 700 !important; }
+.ypg-btn-mini-copy { border-radius: 10px !important; }
+
+/* bottom bar */
+.ypg-sticky-footer { border-top: 1px solid var(--ypg-border) !important; box-shadow: 0 -10px 30px rgba(16, 24, 40, .07); border-radius: 22px 22px 0 0; }
+.ypg-bottom-price { font-size: 22px !important; font-weight: 800 !important; letter-spacing: -.02em; }
+.ypg-btn-continue { padding: 12px 30px !important; }
+
+/* tabs, timers, status */
+.ypg-method-tab { border-radius: 12px !important; font-weight: 700 !important; }
+.ypg-proc-timer-badge, .ypg-banner-running-timer { border-radius: 999px !important; font-weight: 700 !important; }
+.ypg-success-amount { font-weight: 800 !important; letter-spacing: -.02em; }

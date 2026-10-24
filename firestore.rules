@@ -1,0 +1,147 @@
+rules_version = '2';
+// GaadiGlow security rules (v3: three separate portals).
+// Deploy with `firebase deploy --only firestore`, or paste into Firestore → Rules → Publish.
+//
+// Who is who:
+//   Owner (admin)  = a user ID listed in config/admins → field "uids" (array). Sees and changes everything.
+//   Washer partner = has a document washers/w_<uid> with status "approved".
+//   Customer       = anyone signed in. Sees only their own bookings.
+//
+// Private data: a booking's mobile number and address live in bookings/{id}/private/details
+// (customer, assigned washer and owner only). The 4-digit start code lives in
+// bookings/{id}/private/otp (customer and owner only; the washer never reads it, the rules check it).
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function signedIn() { return request.auth != null; }
+    function uid() { return request.auth.uid; }
+    function isAdmin() {
+      return signedIn() && exists(/databases/$(database)/documents/config/admins)
+        && uid() in get(/databases/$(database)/documents/config/admins).data.uids;
+    }
+    function wid() { return 'w_' + uid(); }
+    function approvedWasher() {
+      return signedIn() && exists(/databases/$(database)/documents/washers/$(wid()))
+        && get(/databases/$(database)/documents/washers/$(wid())).data.status == 'approved';
+    }
+    // The owner added this person under Washers → "Add a washer" (key = +91XXXXXXXXXX or a lowercase email).
+    function invited() {
+      let ph = request.auth.token.get('phone_number', '');
+      let em = request.auth.token.get('email', '').lower();
+      return (ph != '' && exists(/databases/$(database)/documents/staffInvites/$(ph)))
+        || (em != '' && exists(/databases/$(database)/documents/staffInvites/$(em)));
+    }
+    function changed() { return request.resource.data.diff(resource.data).affectedKeys(); }
+    function moves(from, to) { return resource.data.status == from && request.resource.data.status == to; }
+
+    // ---------- owner list & settings ----------
+    match /config/{d} {
+      allow read: if signedIn();
+      allow write: if false;            // edited only in the Firebase console
+    }
+    match /settings/{d} {
+      allow read: if true;              // prices are public
+      allow write: if isAdmin();
+    }
+
+    // ---------- people ----------
+    match /users/{userId} {
+      allow read: if isAdmin() || (signedIn() && uid() == userId);
+      allow create: if isAdmin() || (signedIn() && uid() == userId
+        && request.resource.data.role in ['customer', 'washer']);
+      allow update: if isAdmin() || (signedIn() && uid() == userId
+        && request.resource.data.role == resource.data.role);
+      allow delete: if isAdmin();
+    }
+
+    match /staffInvites/{key} {
+      allow read, write: if isAdmin();
+      allow get: if signedIn() && (key == request.auth.token.get('phone_number', '')
+        || key == request.auth.token.get('email', '').lower());
+    }
+
+    match /washers/{id} {
+      allow read: if signedIn();
+      allow create: if isAdmin() || (signedIn() && id == wid()
+        && request.resource.data.ownerId == uid()
+        && request.resource.data.online == false
+        && request.resource.data.keys().hasOnly(['name', 'area', 'vehicle', 'status', 'online', 'joinedAt', 'ownerId', 'lastSeen'])
+        && (request.resource.data.status == 'pending' || (request.resource.data.status == 'approved' && invited())));
+      // A washer can only switch online/offline and fix their name or vehicle. Approve, pause, area: owner only.
+      allow update: if isAdmin() || (signedIn() && resource.data.ownerId == uid()
+        && changed().hasOnly(['online', 'lastSeen', 'name', 'vehicle'])
+        && (request.resource.data.online == false || resource.data.status == 'approved'));
+      allow delete: if isAdmin();
+    }
+
+    // ---------- bookings ----------
+    match /bookings/{id} {
+      function isOwner() { return signedIn() && resource.data.customerId == uid(); }
+      function isAssigned() { return signedIn() && resource.data.washerId == wid(); }
+
+      allow read: if isAdmin() || isOwner()
+        || (approvedWasher() && (resource.data.status == 'requested' || resource.data.washerId == wid()));
+
+      // The price must equal settings/pricing.priceTable[package][carType]; nobody can book at a made-up price.
+      allow create: if isAdmin() || (signedIn()
+        && request.resource.data.customerId == uid()
+        && request.resource.data.status == 'requested'
+        && request.resource.data.washerId == null
+        && request.resource.data.rating == null
+        && request.resource.data.pay in ['cash', 'upi', 'online']
+        && request.resource.data.keys().hasOnly(['code', 'customerId', 'customerName', 'carType', 'carColor', 'carModel', 'plate', 'pkg', 'pkgName', 'mins',
+             'price', 'area', 'date', 'slot', 'pay', 'status', 'washerId', 'createdAt', 'updatedAt', 't_requested', 'rating'])
+        && request.resource.data.price == get(/databases/$(database)/documents/settings/pricing).data.priceTable[request.resource.data.pkg][request.resource.data.carType]);
+
+      allow update: if isAdmin()
+        // customer: cancel before the trip starts, rate a finished wash, note a new chat message
+        || (isOwner() && (
+             ((resource.data.status in ['requested', 'accepted']) && request.resource.data.status == 'cancelled'
+               && request.resource.data.cancelledBy == 'customer'
+               && changed().hasOnly(['status', 't_cancelled', 'cancelledBy', 'updatedAt']))
+          || (resource.data.status == 'done' && request.resource.data.rating is int
+               && request.resource.data.rating >= 1 && request.resource.data.rating <= 5
+               && changed().hasOnly(['rating', 'updatedAt']))
+          || (request.resource.data.lastMsgRole == 'customer' && changed().hasOnly(['lastMsgAt', 'lastMsgRole']))))
+        // approved washer: claim an open job (only while nobody else has it)
+        || (approvedWasher() && moves('requested', 'accepted') && resource.data.washerId == null
+             && request.resource.data.washerId == wid()
+             && changed().hasOnly(['washerId', 'status', 't_accepted', 'updatedAt']))
+        // assigned washer: release, start the trip, start the wash with the right code, finish
+        || (isAssigned() && approvedWasher() && (
+             (moves('accepted', 'requested') && request.resource.data.washerId == null
+               && changed().hasOnly(['status', 'washerId', 't_accepted', 'updatedAt']))
+          || (moves('accepted', 'ontheway') && changed().hasOnly(['status', 't_ontheway', 'updatedAt']))
+          || (moves('ontheway', 'washing') && changed().hasOnly(['status', 't_washing', 'startCode', 'updatedAt'])
+               && request.resource.data.startCode == get(/databases/$(database)/documents/bookings/$(id)/private/otp).data.code)
+          || (moves('washing', 'done') && changed().hasOnly(['status', 't_done', 'updatedAt']))
+          || (request.resource.data.lastMsgRole == 'washer' && changed().hasOnly(['lastMsgAt', 'lastMsgRole']))));
+      // paid / paymentId / razorpayOrderId are written only by Cloud Functions (admin SDK skips these rules).
+
+      allow delete: if isAdmin();
+
+      match /private/{part} {
+        function booking() { return get(/databases/$(database)/documents/bookings/$(id)).data; }
+        allow read: if isAdmin()
+          || (signedIn() && booking().customerId == uid())
+          || (part == 'details' && signedIn() && booking().washerId == wid() && approvedWasher());
+        allow create: if isAdmin() || (signedIn() && booking().customerId == uid() && booking().status == 'requested'
+          && ((part == 'details' && request.resource.data.keys().hasOnly(['phone', 'address'])
+                && request.resource.data.address is string && request.resource.data.address.size() <= 200)
+           || (part == 'otp' && request.resource.data.keys().hasOnly(['code'])
+                && request.resource.data.code is string && request.resource.data.code.matches('^[0-9]{4}$'))));
+        allow update, delete: if isAdmin();
+      }
+
+      match /messages/{msg} {
+        function b() { return get(/databases/$(database)/documents/bookings/$(id)).data; }
+        function party() { return isAdmin() || (signedIn() && (b().customerId == uid() || b().washerId == wid())); }
+        allow read: if party();
+        allow create: if party() && request.resource.data.from == uid()
+          && request.resource.data.text is string && request.resource.data.text.size() <= 400
+          && ((request.resource.data.role == 'customer' && b().customerId == uid())
+           || (request.resource.data.role == 'washer' && b().washerId == wid())
+           || (request.resource.data.role == 'admin' && isAdmin()));
+      }
+    }
+  }
+}
