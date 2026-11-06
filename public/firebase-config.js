@@ -1,4 +1,4 @@
-// GaadiGlow settings for the hosted app. README.md explains each step.
+// Car Glow settings for the hosted app. README.md explains each step.
 
 // 1) Firebase keys. While this is null the app runs as a demo that saves data
 //    only in the browser it is opened in. Paste your firebaseConfig object here

@@ -1,6 +1,6 @@
 {
-  "name": "GaadiGlow Car Wash",
-  "short_name": "GaadiGlow",
+  "name": "Car Glow",
+  "short_name": "Car Glow",
   "description": "Doorstep car wash in Bengaluru. Book a slot, a washer comes to your parking spot, pay after the wash.",
   "id": "./",
   "start_url": "./#customer",

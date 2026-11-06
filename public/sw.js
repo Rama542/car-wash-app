@@ -1,6 +1,6 @@
-// GaadiGlow service worker: lets the app open offline and makes it installable.
+// Car Glow service worker: lets the app open offline and makes it installable.
 // Live data (Firebase) is never cached here; only the app's own files are.
-const CACHE = 'gaadiglow-v5';
+const CACHE = 'carglow-v5';
 const SHELL = ['./', 'index.html', 'policies.html', 'manifest.webmanifest', 'firebase-config.js',
   'icons/icon-192.png', 'icons/icon-512.png', 'icons/maskable-512.png'];
 
