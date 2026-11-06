@@ -3,7 +3,14 @@
 // 1) Firebase keys. While this is null the app runs as a demo that saves data
 //    only in the browser it is opened in. Paste your firebaseConfig object here
 //    (Firebase console → Project settings → Your apps → Web app).
-window.GG_FIREBASE_CONFIG = null;
+window.GG_FIREBASE_CONFIG = {
+  apiKey: "AIzaSyAC_otU3Wg56gCje0CvZL4V5QAX4r7xnZE",
+  authDomain: "car-wash-2401f.firebaseapp.com",
+  projectId: "car-wash-2401f",
+  storageBucket: "car-wash-2401f.firebasestorage.app",
+  messagingSenderId: "81460388614",
+  appId: "1:81460388614:web:c3186fda41ed68a12a3487"
+};
 
 // 2) Login methods (Firebase Authentication).
 //    phone:  mobile number + 6-digit OTP by SMS (the main login). Needs the Blaze plan;
